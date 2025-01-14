@@ -6,6 +6,9 @@ import viteLogo from '/vite.svg'
 function App() {
   const [isAuth, setIsAuth] = useState(false);
 
+  const [tempProduct, setTempProduct] = useState({});
+  const [products, setProduct] = useState([]);
+
   const [account, setAccount] = useState(
     {
       username: "qa821746@gmail.com",
@@ -26,13 +29,98 @@ function App() {
     e.preventDefault();
 
     axios.post(`${import.meta.env.VITE_BASE_URL}/v2/admin/signin`,account)
-      .then((res) => setIsAuth(true))
-      .catch((err) => console.dir(err))
-  }
+      .then((res) => {
+        const {token, expired} = res.data;
+        document.cookie = `hexToken=${token}; expires=${new Date(expired)}`;
+        console.log(res)
+
+        axios.defaults.headers.common['Authorization'] = token;
+        
+        axios.get(`${import.meta.env.VITE_BASE_URL}/v2/api/${import.meta.env.VITE_API_PATH}/admin/products`)
+        .then((res) => setProduct(res.data.products))
+        .catch((err) => console.log(err));
+
+        setIsAuth(true);
+      })
+      .catch((err) => alert("登入失敗"))
+  };
+
+  const checkUser = () =>{
+    axios.post(`${import.meta.env.VITE_BASE_URL}/v2/api/user/check`)
+    .then((res) => alert(`登入成功`))
+    .catch((err) => console.log(err));
+  };
 
   return (
     <>
-      {isAuth ? <p>ewew</p> : <div className="d-flex flex-column justify-content-center align-items-center vh-100">
+      {isAuth ? <div className="container py-5">
+                  <div className="row">
+                    <div className="col-6">
+                      <button onClick={checkUser} type='button'>登入驗證</button>
+                      <h2>產品列表</h2>
+                      <table className="table">
+                        <thead>
+                          <tr>
+                            <th scope="col">產品名稱</th>
+                            <th scope="col">原價</th>
+                            <th scope="col">售價</th>
+                            <th scope="col">是否啟用</th>
+                            <th scope="col">查看細節</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          { products.map((product) => (
+                            <tr key={product.id}>
+                              <th scope="row">{product.title}</th>
+                              <td>{product.origin_price}</td>
+                              <td>{product.price}</td>
+                              <td>{product.is_enabled}</td>
+                              <td>
+                                <button
+                                  onClick={() => setTempProduct(product)}
+                                  className="btn btn-primary"
+                                  type="button"
+                                >
+                                  查看細節
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="col-6">
+                      <h2>單一產品細節</h2>
+                      {tempProduct.title ? (
+                        <div className="card">
+                          <img
+                            src={tempProduct.imageUrl}
+                            className="card-img-top img-fluid"
+                            alt={tempProduct.title}
+                          />
+                          <div className="card-body">
+                            <h5 className="card-title">
+                              {tempProduct.title}
+                              <span className="badge text-bg-primary">
+                                {tempProduct.category}
+                              </span>
+                            </h5>
+                            <p className="card-text">商品描述：{tempProduct.description}</p>
+                            <p className="card-text">商品內容：{tempProduct.content}</p>
+                            <p className="card-text">
+                              <del>{tempProduct.origin_price} 元</del> / {tempProduct.price}{" "}
+                              元
+                            </p>
+                            <h5 className="card-title">更多圖片：</h5>
+                            {tempProduct.imagesUrl?.map((image) => (image && (<img key={image} src={image} className="img-fluid" />)))}
+                          </div>
+                        </div>
+                      ) : (
+                        <p>請選擇一個商品查看</p>
+                      )}
+                    </div>
+                  </div>
+                </div> : <div className="d-flex flex-column justify-content-center align-items-center vh-100">
         <h1 className="mb-5">請先登入</h1>
         <form onSubmit={login} className="d-flex flex-column gap-3">
           <div className="form-floating mb-3">
