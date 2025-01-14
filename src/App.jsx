@@ -25,30 +25,41 @@ function App() {
     })    
   };
 
-  const login = (e) =>{
+  const login = async (e) =>{
     e.preventDefault();
 
-    axios.post(`${import.meta.env.VITE_BASE_URL}/v2/admin/signin`,account)
-      .then((res) => {
-        const {token, expired} = res.data;
-        document.cookie = `hexToken=${token}; expires=${new Date(expired)}`;
-        console.log(res)
+    try{
+      const res = await axios.post(`${import.meta.env.VITE_BASE_URL}/v2/admin/signin`,account)
+      const {token, expired} = res.data;
+      document.cookie = `hexToken=${token}; expires=${new Date(expired)}`;
 
-        axios.defaults.headers.common['Authorization'] = token;
-        
-        axios.get(`${import.meta.env.VITE_BASE_URL}/v2/api/${import.meta.env.VITE_API_PATH}/admin/products`)
-        .then((res) => setProduct(res.data.products))
-        .catch((err) => console.log(err));
-
-        setIsAuth(true);
-      })
-      .catch((err) => alert("登入失敗"))
+      axios.defaults.headers.common['Authorization'] = `${token}`;
+      
+      setIsAuth(true);
+      getProduct();
+      
+    } catch(err) {
+      alert("登入失敗")
+    }
+    
   };
 
-  const checkUser = () =>{
-    axios.post(`${import.meta.env.VITE_BASE_URL}/v2/api/user/check`)
-    .then((res) => alert(`登入成功`))
-    .catch((err) => console.log(err));
+  const getProduct = async () => {
+    try{
+      const res =await axios.get(`${import.meta.env.VITE_BASE_URL}/v2/api/${import.meta.env.VITE_API_PATH}/admin/products`)
+      setProduct(res.data.products)
+    } catch (err) {
+      console.log(err)
+    }
+  };
+
+  const checkUser = async () =>{
+    try{
+      await axios.post(`${import.meta.env.VITE_BASE_URL}/v2/api/user/check`)
+      alert(`登入成功`)
+    } catch (error) {
+      console.log(error)
+    }
   };
 
   return (
