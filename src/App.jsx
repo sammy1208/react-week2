@@ -11,8 +11,8 @@ function App() {
 
   const [account, setAccount] = useState(
     {
-      username: "qa821746@gmail.com",
-      password: "az821746"
+      username: "",
+      password: ""
     }
   );
 
